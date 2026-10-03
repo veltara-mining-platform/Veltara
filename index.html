@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Veltara — Investment Platform</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- LOGIN / SIGN UP -->
+  <section id="authScreen" class="auth-screen">
+    <div class="auth-card">
+
+      <div class="logo">
+        <div class="logo-icon">V</div>
+        <div>
+          <strong>VELTARA</strong>
+          <small>INVESTMENT PLATFORM</small>
+        </div>
+      </div>
+
+      <h1 id="authTitle">Welcome back</h1>
+      <p id="authDescription">
+        Sign in to your investment dashboard.
+      </p>
+
+      <form id="authForm">
+
+        <label>
+          Email
+          <input
+            id="email"
+            type="email"
+            placeholder="you@example.com"
+            required
+          >
+        </label>
+
+        <label>
+          Password
+          <input
+            id="password"
+            type="password"
+            placeholder="••••••••"
+            minlength="6"
+            required
+          >
+        </label>
+
+        <button class="primary-button full-width" type="submit">
+          <span id="authButtonText">Sign in</span>
+        </button>
+
+      </form>
+
+      <button id="switchAuth" class="text-button">
+        Create an account
+      </button>
+
+      <div class="demo-message">
+        Demo account only. No real money is connected.
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- MAIN APPLICATION -->
+  <div id="app" class="app hidden">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+      <div class="brand">
+        <div class="brand-icon">V</div>
+
+        <div>
+          <strong>VELTARA</strong>
+          <small>INVESTMENT PLATFORM</small>
+        </div>
+      </div>
+
+      <nav>
+
+        <button class="nav-item active" data-page="dashboard">
+          <span>⌂</span>
+          Dashboard
+        </button>
+
+        <button class="nav-item" data-page="invest">
+          <span>◈</span>
+          Invest
+        </button>
+
+        <button class="nav-item" data-page="wallet">
+          <span>▣</span>
+          Wallet
+        </button>
+
+      </nav>
+
+      <div class="sidebar-bottom">
+
+        <div class="demo-account">
+          <small>DEMO ACCOUNT</small>
+          <span>No real funds connected</span>
+        </div>
+
+        <button id="logoutButton" class="logout-button">
+          ↪ Log out
+        </button>
+
+      </div>
+
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+      <!-- HEADER -->
+      <header class="top-header">
+
+        <div>
+
+          <span class="eyebrow">
+            YOUR INVESTMENT JOURNEY
+          </span>
+
+          <h1>
+            Good afternoon,<br>
+            <span>Investor 👋</span>
+          </h1>
+
+          <p>
+            Your investment journey is going great!
+          </p>
+
+        </div>
+
+        <div class="profile">
+
+          <div class="avatar">
+            I
+          </div>
+
+          <div>
+            <strong>Investor</strong>
+            <small>Demo account</small>
+          </div>
+
+        </div>
+
+      </header>
+
+
+      <!-- DASHBOARD -->
+      <section id="dashboard" class="page">
+
+        <!-- BALANCE -->
+        <div class="balance-card">
+
+          <div>
+
+            <span>
+              Total Balance
+              <button id="toggleBalance">◉</button>
+            </span>
+
+            <strong id="balanceAmount">
+              ₦3,712,680
+            </strong>
+
+            <small class="positive">
+              ↑ +12.6% This month
+            </small>
+
+          </div>
+
+          <button
+            class="white-button"
+            data-action="deposit"
+          >
+            ＋ Deposit
+          </button>
+
+        </div>
+
+
+        <!-- QUICK ACTIONS -->
+        <div class="quick-actions">
+
+          <button data-action="invest">
+            <b>＋</b>
+            <strong>Invest</strong>
+            <small>Grow your wealth</small>
+          </button>
+
+          <button data-action="withdraw">
+            <b>↗</b>
+            <strong>Withdraw</strong>
+            <small>Access funds</small>
+          </button>
+
+          <button data-action="plans">
+            <b>▣</b>
+            <strong>Plans</strong>
+            <small>View investments</small>
+          </button>
+
+          <button data-action="refer">
+            <b>♧</b>
+            <strong>Refer</strong>
+            <small>Earn rewards</small>
+          </button>
+
+        </div>
+
+
+        <!-- PORTFOLIO -->
+        <div class="section-header">
+
+          <h2>Portfolio Overview</h2>
+
+          <button data-action="details">
+            View Details →
+          </button>
+
+        </div>
+
+        <div class="stats-grid">
+
+          <div class="stat-card">
+            <small>Invested</small>
+            <strong>₦2,500,000</strong>
+          </div>
+
+          <div class="stat-card">
+            <small>Returns</small>
+            <strong>₦312,680</strong>
+          </div>
+
+          <div class="stat-card">
+            <small>Growth</small>
+            <strong class="green">
+              +12.6%
+            </strong>
+          </div>
+
+          <div class="stat-card">
+            <small>Risk</small>
+            <strong>Moderate</strong>
+          </div>
+
+        </div>
+
+
+        <!-- INVESTMENT PLANS -->
+        <div class="section-header">
+
+          <h2>Investment Plans</h2>
+
+          <button data-action="plans">
+            View All →
+          </button>
+
+        </div>
+
+        <div class="plans">
+
+          <article class="plan-card">
+
+            <div class="plan-icon">
+              ↗
+            </div>
+
+            <div>
+              <strong>Balanced Growth</strong>
+              <small>
+                12.6% target • 12 months
+              </small>
+            </div>
+
+            <span class="active-badge">
+              ACTIVE
+            </span>
+
+            <b>
+              ₦1,500,000
+            </b>
+
+          </article>
+
+
+          <article class="plan-card">
+
+            <div class="plan-icon">
+              ◈
+            </div>
+
+            <div>
+              <strong>Long-Term Wealth</strong>
+              <small>
+                10 year horizon
+              </small>
+            </div>
+
+            <span class="active-badge">
+              ACTIVE
+            </span>
+
+            <b>
+              ₦1,000,000
+            </b>
+
+          </article>
+
+        </div>
+
+
+        <!-- ASSET ALLOCATION -->
+        <div class="section-header">
+
+          <h2>Asset Allocation</h2>
+
+          <button data-action="adjust">
+            Adjust →
+          </button>
+
+        </div>
+
+        <div class="allocation-card">
+
+          <div class="donut">
+            <div>
+              <strong>100%</strong>
+              <small>Portfolio</small>
+            </div>
+          </div>
+
+          <div class="allocation-list">
+
+            <p>
+              <span>Nigerian equities</span>
+              <b>35%</b>
+            </p>
+
+            <p>
+              <span>Bonds &amp; T-bills</span>
+              <b>25%</b>
+            </p>
+
+            <p>
+              <span>Global ETFs</span>
+              <b>20%</b>
+            </p>
+
+            <p>
+              <span>REITs</span>
+              <b>10%</b>
+            </p>
+
+            <p>
+              <span>Cash</span>
+              <b>10%</b>
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <!-- ACTIVITY -->
+        <div class="section-header">
+
+          <h2>Recent Activity</h2>
+
+          <button data-action="activity">
+            View All →
+          </button>
+
+        </div>
+
+        <div class="activity-card">
+
+          <div class="activity-row">
+
+            <div class="activity-icon">
+              ＋
+            </div>
+
+            <div>
+              <strong>Monthly Investment</strong>
+              <small>Today • Portfolio</small>
+            </div>
+
+            <b class="green">
+              + ₦100,000
+            </b>
+
+          </div>
+
+
+          <div class="activity-row">
+
+            <div class="activity-icon">
+              ↗
+            </div>
+
+            <div>
+              <strong>Investment Return</strong>
+              <small>Yesterday • Balanced Growth</small>
+            </div>
+
+            <b class="green">
+              + ₦18,750
+            </b>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- INVEST PAGE -->
+      <section id="invest" class="page hidden">
+
+        <div class="panel">
+
+          <h2>Investment Plans</h2>
+
+          <p>
+            Choose an investment plan for this demo.
+          </p>
+
+          <div class="choice-card">
+
+            <div>
+              <strong>Balanced Growth</strong>
+              <small>12 months • 12.6% target</small>
+            </div>
+
+            <button
+              class="primary-button"
+              data-action="investNow"
+            >
+              Invest
+            </button>
+
+          </div>
+
+
+          <div class="choice-card">
+
+            <div>
+              <strong>Long-Term Wealth</strong>
+              <small>10 year horizon</small>
+            </div>
+
+            <button
+              class="primary-button"
+              data-action="investNow"
+            >
+              Invest
+            </button>
+
+          </div>
+
+          <div class="notice">
+            Demo only — no real investment transaction is performed.
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- WALLET PAGE -->
+      <section id="wallet" class="page hidden">
+
+        <div class="panel">
+
+          <h2>Wallet</h2>
+
+          <p>
+            Your current demo wallet balance
+          </p>
+
+          <strong class="wallet-balance">
+            ₦3,712,680
+          </strong>
+
+          <button
+            class="primary-button"
+            data-action="deposit"
+          >
+            ＋ Deposit
+          </button>
+
+          <button
+            class="secondary-button"
+            data-action="withdraw"
+          >
+            ↗ Withdraw
+          </button>
+
+          <div class="notice">
+            Demo only. Connect a secure backend and regulated
+            payment/custody provider before handling real money.
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <footer>
+        Veltara © 2026 · Demo investment interface
+      </footer>
+
+    </main>
+
+  </div>
+
+
+  <div id="toast" class="toast"></div>
+
+  <script src="script.js"></script>
+
+</body>
+</html>
