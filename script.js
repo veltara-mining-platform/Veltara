@@ -487,7 +487,7 @@ function setupActions() {
    DEPOSIT
 ========================= */
 
-function openDeposit() {
+async function openDeposit() {
   openModal(
     "Deposit Funds",
     `
@@ -517,14 +517,12 @@ function openDeposit() {
     `
   );
 
-  const button =
-    $("#confirmDeposit");
+  const button = $("#confirmDeposit");
 
   if (!button) return;
 
-  button.addEventListener("click", () => {
-    const amount =
-      Number($("#depositAmount").value);
+  button.addEventListener("click", async () => {
+    const amount = Number($("#depositAmount").value);
 
     if (!Number.isFinite(amount)) {
       toast("Please enter a valid amount.");
@@ -536,19 +534,54 @@ function openDeposit() {
       return;
     }
 
-    /*
-      Paystack connection will be added
-      in the next step.
+    try {
+      button.disabled = true;
+      button.textContent = "Connecting to Paystack...";
 
-      DO NOT increase the balance here.
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-      The balance should only increase
-      after Paystack confirms payment.
-    */
+      if (!user) {
+        toast("Please log in again.");
+        button.disabled = false;
+        button.textContent = "Continue to Payment";
+        return;
+      }
 
-    toast(
-      "Payment system is being connected."
-    );
+      const response = await fetch(
+        "/.netlify/functions/initialize-payment",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: user.email,
+            amount: amount,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.status || !data.data?.authorization_url) {
+        throw new Error(
+          data.message || data.error || "Unable to start payment."
+        );
+      }
+
+      window.location.href = data.data.authorization_url;
+    } catch (error) {
+      console.error(error);
+
+      toast(
+        error.message || "Payment could not be started."
+      );
+
+      button.disabled = false;
+      button.textContent = "Continue to Payment";
+    }
   });
 }
 
