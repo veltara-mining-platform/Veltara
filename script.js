@@ -1,107 +1,134 @@
 // ========================================
 // VELTARA INVESTMENT PLATFORM
-// Functional Demo Dashboard
+// Complete Functional Demo
+// ========================================
+
+
+// ========================================
+// GLOBAL HELPERS
 // ========================================
 
 const $ = (selector) => document.querySelector(selector);
 
-const toast = (message) => {
+const $$ = (selector) =>
+  document.querySelectorAll(selector);
+
+
+const DEFAULT_BALANCE = 3712680;
+
+let balanceVisible = true;
+
+
+function toast(message) {
+
   const toastBox = $("#toast");
 
+  if (!toastBox) return;
+
   toastBox.textContent = message;
+
   toastBox.classList.add("show");
 
   clearTimeout(window.toastTimer);
 
   window.toastTimer = setTimeout(() => {
+
     toastBox.classList.remove("show");
+
   }, 2500);
-};
+}
+
+
+function formatMoney(amount) {
+
+  return `₦${Number(amount).toLocaleString("en-NG")}`;
+
+}
 
 
 // ========================================
-// DEMO WALLET DATA
+// WALLET STORAGE
 // ========================================
 
-const DEFAULT_BALANCE = 3712680;
+function getWallet() {
 
-function getWalletData() {
-  const saved =
+  let wallet =
     JSON.parse(
       localStorage.getItem("veltaraWallet") || "null"
     );
 
-  if (!saved) {
-    const wallet = {
+
+  if (!wallet) {
+
+    wallet = {
+
       balance: DEFAULT_BALANCE,
+
       transactions: [
-        {
-          type: "Investment Return",
-          amount: 18750,
-          direction: "in",
-          date: "Yesterday"
-        },
+
         {
           type: "Monthly Investment",
           amount: 100000,
           direction: "in",
           date: "Today"
+        },
+
+        {
+          type: "Investment Return",
+          amount: 18750,
+          direction: "in",
+          date: "Yesterday"
         }
+
       ]
+
     };
+
 
     localStorage.setItem(
       "veltaraWallet",
       JSON.stringify(wallet)
     );
 
-    return wallet;
   }
 
-  return saved;
+
+  return wallet;
 }
 
 
-function saveWalletData(wallet) {
+function saveWallet(wallet) {
+
   localStorage.setItem(
     "veltaraWallet",
     JSON.stringify(wallet)
   );
+
 }
 
 
 // ========================================
-// FORMAT MONEY
+// BALANCE DISPLAY
 // ========================================
 
-function formatMoney(amount) {
-  return `₦${Number(amount).toLocaleString("en-NG")}`;
-}
+function updateBalanceDisplay() {
+
+  const wallet = getWallet();
 
 
-// ========================================
-// UPDATE BALANCE DISPLAY
-// ========================================
-
-function updateBalanceDisplays() {
-
-  const wallet = getWalletData();
-
-  const balance = wallet.balance;
-
-
-  const balanceAmount =
+  const balanceElement =
     $("#balanceAmount");
+
 
   const walletBalance =
     document.querySelector(".wallet-balance");
 
 
-  if (balanceAmount) {
+  if (balanceElement) {
 
-    balanceAmount.textContent =
+    balanceElement.textContent =
       balanceVisible
-        ? formatMoney(balance)
+        ? formatMoney(wallet.balance)
         : "••••••••";
 
   }
@@ -110,9 +137,10 @@ function updateBalanceDisplays() {
   if (walletBalance) {
 
     walletBalance.textContent =
-      formatMoney(balance);
+      formatMoney(wallet.balance);
 
   }
+
 }
 
 
@@ -122,200 +150,319 @@ function updateBalanceDisplays() {
 
 let authMode = "login";
 
-const authForm = $("#authForm");
-const authTitle = $("#authTitle");
-const authDescription = $("#authDescription");
-const authButtonText = $("#authButtonText");
-const switchAuth = $("#switchAuth");
-
 
 function updateAuthScreen() {
 
+  const title =
+    $("#authTitle");
+
+  const description =
+    $("#authDescription");
+
+  const buttonText =
+    $("#authButtonText");
+
+  const switchButton =
+    $("#switchAuth");
+
+
+  if (!title) return;
+
+
   if (authMode === "login") {
 
-    authTitle.textContent = "Welcome back";
+    title.textContent =
+      "Welcome back";
 
-    authDescription.textContent =
+    description.textContent =
       "Sign in to your investment dashboard.";
 
-    authButtonText.textContent = "Sign in";
+    buttonText.textContent =
+      "Sign in";
 
-    switchAuth.textContent =
+    switchButton.textContent =
       "Create an account";
 
   } else {
 
-    authTitle.textContent =
+    title.textContent =
       "Create your account";
 
-    authDescription.textContent =
+    description.textContent =
       "Create a demo account to explore Veltara.";
 
-    authButtonText.textContent =
+    buttonText.textContent =
       "Create account";
 
-    switchAuth.textContent =
+    switchButton.textContent =
       "I already have an account";
+
   }
+
 }
 
 
-switchAuth.addEventListener("click", () => {
+// ========================================
+// AUTH FORM
+// ========================================
 
-  authMode =
-    authMode === "login"
-      ? "signup"
-      : "login";
+function setupAuthentication() {
 
-  updateAuthScreen();
-});
+  const authForm =
+    $("#authForm");
 
-
-authForm.addEventListener("submit", (event) => {
-
-  event.preventDefault();
-
-  const email =
-    $("#email").value.trim().toLowerCase();
-
-  const password =
-    $("#password").value;
-
-  if (!email || !password) {
-
-    toast("Please enter your email and password.");
-
-    return;
-  }
+  const switchAuth =
+    $("#switchAuth");
 
 
-  if (authMode === "signup") {
+  if (!authForm) return;
 
-    if (password.length < 6) {
 
-      toast(
-        "Password must contain at least 6 characters."
-      );
+  switchAuth.addEventListener(
+    "click",
+    () => {
 
-      return;
+      authMode =
+        authMode === "login"
+          ? "signup"
+          : "login";
+
+      updateAuthScreen();
+
     }
-
-    const user = {
-      email,
-      password
-    };
-
-    localStorage.setItem(
-      "veltaraUser",
-      JSON.stringify(user)
-    );
-
-    localStorage.setItem(
-      "veltaraLoggedIn",
-      "true"
-    );
-
-    // Create wallet for new account
-    const wallet = {
-      balance: DEFAULT_BALANCE,
-      transactions: [
-        {
-          type: "Investment Return",
-          amount: 18750,
-          direction: "in",
-          date: "Yesterday"
-        },
-        {
-          type: "Monthly Investment",
-          amount: 100000,
-          direction: "in",
-          date: "Today"
-        }
-      ]
-    };
-
-    saveWalletData(wallet);
-
-    toast("Account created successfully!");
-
-    setTimeout(showApplication, 400);
-
-    return;
-  }
-
-
-  const savedUser =
-    JSON.parse(
-      localStorage.getItem("veltaraUser") || "null"
-    );
-
-
-  if (!savedUser) {
-
-    toast(
-      "No account found. Please create an account first."
-    );
-
-    return;
-  }
-
-
-  if (
-    savedUser.email !== email ||
-    savedUser.password !== password
-  ) {
-
-    toast("Incorrect email or password.");
-
-    return;
-  }
-
-
-  localStorage.setItem(
-    "veltaraLoggedIn",
-    "true"
   );
 
-  toast("Login successful!");
 
-  setTimeout(showApplication, 400);
-});
+  authForm.addEventListener(
+    "submit",
+    (event) => {
+
+      event.preventDefault();
+
+
+      const email =
+        $("#email").value
+          .trim()
+          .toLowerCase();
+
+
+      const password =
+        $("#password").value;
+
+
+      if (!email || !password) {
+
+        toast(
+          "Please enter your email and password."
+        );
+
+        return;
+
+      }
+
+
+      // ====================================
+      // CREATE ACCOUNT
+      // ====================================
+
+      if (authMode === "signup") {
+
+        if (password.length < 6) {
+
+          toast(
+            "Password must contain at least 6 characters."
+          );
+
+          return;
+
+        }
+
+
+        const user = {
+
+          email: email,
+
+          password: password
+
+        };
+
+
+        localStorage.setItem(
+          "veltaraUser",
+          JSON.stringify(user)
+        );
+
+
+        localStorage.setItem(
+          "veltaraLoggedIn",
+          "true"
+        );
+
+
+        // Create wallet if user has none
+        if (
+          !localStorage.getItem("veltaraWallet")
+        ) {
+
+          saveWallet({
+
+            balance: DEFAULT_BALANCE,
+
+            transactions: [
+
+              {
+                type: "Monthly Investment",
+                amount: 100000,
+                direction: "in",
+                date: "Today"
+              },
+
+              {
+                type: "Investment Return",
+                amount: 18750,
+                direction: "in",
+                date: "Yesterday"
+              }
+
+            ]
+
+          });
+
+        }
+
+
+        toast(
+          "Account created successfully!"
+        );
+
+
+        setTimeout(
+          showApplication,
+          400
+        );
+
+
+        return;
+
+      }
+
+
+      // ====================================
+      // LOGIN
+      // ====================================
+
+      const savedUser =
+        JSON.parse(
+          localStorage.getItem(
+            "veltaraUser"
+          ) || "null"
+        );
+
+
+      if (!savedUser) {
+
+        toast(
+          "No account found. Please create an account first."
+        );
+
+        return;
+
+      }
+
+
+      if (
+        savedUser.email !== email ||
+        savedUser.password !== password
+      ) {
+
+        toast(
+          "Incorrect email or password."
+        );
+
+        return;
+
+      }
+
+
+      localStorage.setItem(
+        "veltaraLoggedIn",
+        "true"
+      );
+
+
+      toast(
+        "Login successful!"
+      );
+
+
+      setTimeout(
+        showApplication,
+        400
+      );
+
+    }
+  );
+
+}
 
 
 // ========================================
-// APPLICATION
+// SHOW APPLICATION
 // ========================================
 
 function showApplication() {
 
-  $("#authScreen").classList.add("hidden");
+  const authScreen =
+    $("#authScreen");
 
-  $("#app").classList.remove("hidden");
+  const app =
+    $("#app");
+
+
+  if (authScreen) {
+
+    authScreen.classList.add("hidden");
+
+  }
+
+
+  if (app) {
+
+    app.classList.remove("hidden");
+
+  }
+
 
   addProfileNavigation();
 
   addProfilePage();
 
-  updateBalanceDisplays();
+  updateBalanceDisplay();
 
   renderRecentActivity();
+
 }
 
+
+// ========================================
+// CHECK LOGIN
+// ========================================
 
 function checkLogin() {
 
   const loggedIn =
-    localStorage.getItem("veltaraLoggedIn");
+    localStorage.getItem(
+      "veltaraLoggedIn"
+    );
+
 
   if (loggedIn === "true") {
 
     showApplication();
 
   }
+
 }
-
-
-checkLogin();
 
 
 // ========================================
@@ -325,33 +472,55 @@ checkLogin();
 function addProfileNavigation() {
 
   const nav =
-    document.querySelector(".sidebar nav");
+    document.querySelector(
+      ".sidebar nav"
+    );
+
 
   if (!nav) return;
 
+
   if (
-    document.querySelector('[data-page="profile"]')
+    document.querySelector(
+      '[data-page="profile"]'
+    )
   ) {
+
     return;
+
   }
 
-  const profileButton =
+
+  const button =
     document.createElement("button");
 
-  profileButton.className = "nav-item";
 
-  profileButton.dataset.page = "profile";
+  button.className =
+    "nav-item";
 
-  profileButton.innerHTML = `
+
+  button.dataset.page =
+    "profile";
+
+
+  button.innerHTML = `
     <span>♙</span>
     Profile
   `;
 
-  nav.appendChild(profileButton);
 
-  profileButton.addEventListener("click", () => {
-    openPage("profile");
-  });
+  nav.appendChild(button);
+
+
+  button.addEventListener(
+    "click",
+    () => {
+
+      openPage("profile");
+
+    }
+  );
+
 }
 
 
@@ -363,26 +532,44 @@ function addProfilePage() {
 
   if ($("#profile")) return;
 
+
   const main =
-    document.querySelector(".main-content");
+    document.querySelector(
+      ".main-content"
+    );
+
+
+  if (!main) return;
+
 
   const footer =
     main.querySelector("footer");
 
+
   const profile =
     document.createElement("section");
 
-  profile.id = "profile";
 
-  profile.className = "page hidden";
+  profile.id =
+    "profile";
+
+
+  profile.className =
+    "page hidden";
+
 
   const savedUser =
     JSON.parse(
-      localStorage.getItem("veltaraUser") || "null"
+      localStorage.getItem(
+        "veltaraUser"
+      ) || "null"
     );
 
+
   const email =
-    savedUser?.email || "investor@example.com";
+    savedUser?.email ||
+    "investor@example.com";
+
 
   profile.innerHTML = `
 
@@ -411,7 +598,9 @@ function addProfilePage() {
 
         <div>
 
-          <strong>Investor</strong>
+          <strong>
+            Investor
+          </strong>
 
           <span>
             Demo account
@@ -456,7 +645,9 @@ function addProfilePage() {
 
           <select id="riskPreference">
 
-            <option>Conservative</option>
+            <option>
+              Conservative
+            </option>
 
             <option selected>
               Moderate
@@ -483,9 +674,13 @@ function addProfilePage() {
 
       <div class="profile-options">
 
-        <button data-profile-action="security">
+        <button
+          data-profile-action="security"
+        >
 
-          <strong>Security</strong>
+          <strong>
+            Security
+          </strong>
 
           <span>
             Manage your account security
@@ -494,9 +689,13 @@ function addProfilePage() {
         </button>
 
 
-        <button data-profile-action="notifications">
+        <button
+          data-profile-action="notifications"
+        >
 
-          <strong>Notifications</strong>
+          <strong>
+            Notifications
+          </strong>
 
           <span>
             Manage investment notifications
@@ -505,9 +704,13 @@ function addProfilePage() {
         </button>
 
 
-        <button data-profile-action="help">
+        <button
+          data-profile-action="help"
+        >
 
-          <strong>Help & Support</strong>
+          <strong>
+            Help & Support
+          </strong>
 
           <span>
             Get help with your account
@@ -527,62 +730,112 @@ function addProfilePage() {
       </div>
 
     </div>
+
   `;
 
-  main.insertBefore(profile, footer);
+
+  if (footer) {
+
+    main.insertBefore(
+      profile,
+      footer
+    );
+
+  } else {
+
+    main.appendChild(profile);
+
+  }
 
 
-  $("#saveProfile").addEventListener("click", () => {
+  const saveButton =
+    $("#saveProfile");
 
-    const name =
-      $("#profileName").value.trim();
 
-    if (!name) {
+  if (saveButton) {
 
-      toast("Please enter your name.");
+    saveButton.addEventListener(
+      "click",
+      () => {
 
-      return;
-    }
+        const name =
+          $("#profileName")
+            .value
+            .trim();
 
-    toast("Profile updated successfully.");
-  });
+
+        if (!name) {
+
+          toast(
+            "Please enter your name."
+          );
+
+          return;
+
+        }
+
+
+        toast(
+          "Profile updated successfully."
+        );
+
+      }
+    );
+
+  }
 
 
   profile
-    .querySelectorAll("[data-profile-action]")
+    .querySelectorAll(
+      "[data-profile-action]"
+    )
     .forEach((button) => {
 
-      button.addEventListener("click", () => {
+      button.addEventListener(
+        "click",
+        () => {
 
-        const action =
-          button.dataset.profileAction;
+          const action =
+            button.dataset.profileAction;
 
-        if (action === "security") {
 
-          toast(
-            "Security settings opened."
-          );
+          if (
+            action === "security"
+          ) {
+
+            toast(
+              "Security settings opened."
+            );
+
+          }
+
+
+          if (
+            action === "notifications"
+          ) {
+
+            toast(
+              "Notification settings opened."
+            );
+
+          }
+
+
+          if (
+            action === "help"
+          ) {
+
+            toast(
+              "Support center opened."
+            );
+
+          }
 
         }
-
-        if (action === "notifications") {
-
-          toast(
-            "Notification settings opened."
-          );
-
-        }
-
-        if (action === "help") {
-
-          toast(
-            "Support center opened."
-          );
-        }
-
-      });
+      );
 
     });
+
 }
 
 
@@ -592,23 +845,29 @@ function addProfilePage() {
 
 function setupNavigation() {
 
-  document
-    .querySelectorAll(".nav-item")
+  $$(".nav-item")
     .forEach((button) => {
 
-      button.addEventListener("click", () => {
+      button.addEventListener(
+        "click",
+        () => {
 
-        const page =
-          button.dataset.page;
+          const page =
+            button.dataset.page;
 
-        openPage(page);
 
-      });
+          if (page) {
+
+            openPage(page);
+
+          }
+
+        }
+      );
 
     });
-}
 
-setupNavigation();
+}
 
 
 // ========================================
@@ -617,45 +876,58 @@ setupNavigation();
 
 function openPage(pageName) {
 
-  document
-    .querySelectorAll(".nav-item")
+  $$(".nav-item")
     .forEach((button) => {
 
-      button.classList.remove("active");
+      button.classList.remove(
+        "active"
+      );
+
 
       if (
-        button.dataset.page === pageName
+        button.dataset.page ===
+        pageName
       ) {
 
-        button.classList.add("active");
+        button.classList.add(
+          "active"
+        );
 
       }
 
     });
 
 
-  document
-    .querySelectorAll(".page")
+  $$(".page")
     .forEach((page) => {
 
-      page.classList.add("hidden");
+      page.classList.add(
+        "hidden"
+      );
 
     });
 
 
   const page =
-    document.getElementById(pageName);
+    document.getElementById(
+      pageName
+    );
+
 
   if (page) {
 
-    page.classList.remove("hidden");
+    page.classList.remove(
+      "hidden"
+    );
 
   }
 
 
-  if (pageName === "wallet") {
+  if (
+    pageName === "wallet"
+  ) {
 
-    updateBalanceDisplays();
+    updateBalanceDisplay();
 
   }
 
@@ -664,23 +936,50 @@ function openPage(pageName) {
     top: 0,
     behavior: "smooth"
   });
+
 }
 
 
 // ========================================
-// MODAL SYSTEM
+// MODAL
 // ========================================
 
-function openModal(title, content) {
+function closeModal() {
+
+  const modal =
+    $("#veltaraModal");
+
+
+  if (modal) {
+
+    modal.remove();
+
+  }
+
+}
+
+
+function openModal(
+  title,
+  content
+) {
 
   closeModal();
 
+
   const modal =
-    document.createElement("div");
+    document.createElement(
+      "div"
+    );
 
-  modal.id = "veltaraModal";
 
-  modal.className = "modal-overlay";
+  modal.id =
+    "veltaraModal";
+
+
+  modal.className =
+    "modal-overlay";
+
 
   modal.innerHTML = `
 
@@ -693,44 +992,55 @@ function openModal(title, content) {
         ×
       </button>
 
-      <h2>${title}</h2>
+      <h2>
+        ${title}
+      </h2>
 
       <div class="modal-content">
+
         ${content}
+
       </div>
 
     </div>
+
   `;
 
-  document.body.appendChild(modal);
 
-  $("#modalClose").addEventListener(
-    "click",
-    closeModal
+  document.body.appendChild(
+    modal
   );
 
-  modal.addEventListener("click", (event) => {
 
-    if (event.target === modal) {
-
-      closeModal();
-
-    }
-
-  });
-}
+  const closeButton =
+    $("#modalClose");
 
 
-function closeModal() {
+  if (closeButton) {
 
-  const modal =
-    $("#veltaraModal");
-
-  if (modal) {
-
-    modal.remove();
+    closeButton.addEventListener(
+      "click",
+      closeModal
+    );
 
   }
+
+
+  modal.addEventListener(
+    "click",
+    (event) => {
+
+      if (
+        event.target === modal
+      ) {
+
+        closeModal();
+
+      }
+
+    }
+  );
+
 }
 
 
@@ -742,11 +1052,13 @@ function openDeposit() {
 
   openModal(
     "Deposit Funds",
+
     `
 
       <p>
         Add funds to your Veltara demo wallet.
       </p>
+
 
       <label class="modal-label">
 
@@ -761,6 +1073,7 @@ function openDeposit() {
 
       </label>
 
+
       <button
         class="primary-button full-width"
         id="confirmDeposit"
@@ -768,63 +1081,89 @@ function openDeposit() {
         Deposit
       </button>
 
+
       <div class="notice">
 
-        Demo only. No money will actually be transferred.
+        Demo only.
+        No money will actually be transferred.
 
       </div>
+
     `
   );
 
 
-  $("#confirmDeposit").addEventListener(
+  const button =
+    $("#confirmDeposit");
+
+
+  if (!button) return;
+
+
+  button.addEventListener(
     "click",
     () => {
 
       const amount =
-        Number($("#depositAmount").value);
+        Number(
+          $("#depositAmount").value
+        );
 
 
-      if (!amount || amount < 1000) {
+      if (
+        !amount ||
+        amount < 1000
+      ) {
 
         toast(
           "Enter an amount of at least ₦1,000."
         );
 
         return;
+
       }
 
 
       const wallet =
-        getWalletData();
+        getWallet();
 
 
-      wallet.balance += amount;
+      wallet.balance =
+        wallet.balance + amount;
 
 
       wallet.transactions.unshift({
+
         type: "Deposit",
+
         amount: amount,
+
         direction: "in",
+
         date: "Just now"
+
       });
 
 
-      saveWalletData(wallet);
+      saveWallet(wallet);
+
 
       closeModal();
 
-      updateBalanceDisplays();
+
+      updateBalanceDisplay();
+
 
       renderRecentActivity();
 
 
       toast(
-        `₦${amount.toLocaleString()} deposited successfully.`
+        `${formatMoney(amount)} deposited successfully.`
       );
 
     }
   );
+
 }
 
 
@@ -836,11 +1175,13 @@ function openWithdraw() {
 
   openModal(
     "Withdraw Funds",
+
     `
 
       <p>
         Request a withdrawal from your demo wallet.
       </p>
+
 
       <label class="modal-label">
 
@@ -855,6 +1196,7 @@ function openWithdraw() {
 
       </label>
 
+
       <button
         class="primary-button full-width"
         id="confirmWithdraw"
@@ -862,138 +1204,102 @@ function openWithdraw() {
         Withdraw
       </button>
 
+
       <div class="notice">
 
-        Demo only. No real withdrawal will occur.
+        Demo only.
+        No real withdrawal will occur.
 
       </div>
+
     `
   );
 
 
-  $("#confirmWithdraw").addEventListener(
+  const button =
+    $("#confirmWithdraw");
+
+
+  if (!button) return;
+
+
+  button.addEventListener(
     "click",
     () => {
 
       const amount =
-        Number($("#withdrawAmount").value);
+        Number(
+          $("#withdrawAmount").value
+        );
 
 
-      if (!amount || amount < 1000) {
+      if (
+        !amount ||
+        amount < 1000
+      ) {
 
         toast(
           "Enter an amount of at least ₦1,000."
         );
 
         return;
+
       }
 
 
       const wallet =
-        getWalletData();
+        getWallet();
 
 
-      if (amount > wallet.balance) {
+      if (
+        amount > wallet.balance
+      ) {
 
         toast(
           "Insufficient demo wallet balance."
         );
 
         return;
+
       }
 
 
-      wallet.balance -= amount;
+      wallet.balance =
+        wallet.balance - amount;
 
 
       wallet.transactions.unshift({
+
         type: "Withdrawal",
+
         amount: amount,
+
         direction: "out",
+
         date: "Just now"
+
       });
 
 
-      saveWalletData(wallet);
+      saveWallet(wallet);
+
 
       closeModal();
 
-      updateBalanceDisplays();
+
+      updateBalanceDisplay();
+
 
       renderRecentActivity();
 
 
       toast(
-        `₦${amount.toLocaleString()} withdrawn successfully.`
+        `${formatMoney(amount)} withdrawn successfully.`
       );
 
     }
   );
-}
 
-
-// ========================================
-// RECENT ACTIVITY
-// ========================================
-
-function renderRecentActivity() {
-
-  const activityCard =
-    document.querySelector(".activity-card");
-
-  if (!activityCard) return;
-
-
-  const wallet =
-    getWalletData();
-
-
-  const transactions =
-    wallet.transactions.slice(0, 5);
-
-
-  activityCard.innerHTML =
-    transactions.map((transaction) => {
-
-      const isIncoming =
-        transaction.direction === "in";
-
-      const symbol =
-        isIncoming ? "＋" : "↗";
-
-      const sign =
-        isIncoming ? "+" : "-";
-
-
-      return `
-
-        <div class="activity-row">
-
-          <div class="activity-icon">
-            ${symbol}
-          </div>
-
-          <div>
-
-            <strong>
-              ${transaction.type}
-            </strong>
-
-            <small>
-              ${transaction.date} • Wallet
-            </small>
-
-          </div>
-
-          <b class="${isIncoming ? "green" : ""}">
-            ${sign} ${formatMoney(transaction.amount)}
-          </b>
-
-        </div>
-
-      `;
-
-    }).join("");
 }
 
 
@@ -1005,6 +1311,7 @@ function openPlans() {
 
   openModal(
     "Investment Plans",
+
     `
 
       <div class="modal-plan">
@@ -1020,6 +1327,7 @@ function openPlans() {
           </small>
 
         </div>
+
 
         <button
           class="primary-button"
@@ -1045,6 +1353,7 @@ function openPlans() {
 
         </div>
 
+
         <button
           class="primary-button"
           data-modal-invest="Long-Term Wealth"
@@ -1061,28 +1370,34 @@ function openPlans() {
         an offer to provide investment services.
 
       </div>
+
     `
   );
 
 
-  document
-    .querySelectorAll("[data-modal-invest]")
+  $$("[data-modal-invest]")
     .forEach((button) => {
 
-      button.addEventListener("click", () => {
+      button.addEventListener(
+        "click",
+        () => {
 
-        const plan =
-          button.dataset.modalInvest;
+          const plan =
+            button.dataset.modalInvest;
 
-        closeModal();
 
-        toast(
-          `${plan} selected for this demo.`
-        );
+          closeModal();
 
-      });
+
+          toast(
+            `${plan} selected for this demo.`
+          );
+
+        }
+      );
 
     });
+
 }
 
 
@@ -1094,37 +1409,70 @@ function openPortfolioDetails() {
 
   openModal(
     "Portfolio Details",
+
     `
 
       <div class="detail-row">
-        <span>Total invested</span>
-        <strong>₦2,500,000</strong>
+
+        <span>
+          Total invested
+        </span>
+
+        <strong>
+          ₦2,500,000
+        </strong>
+
       </div>
 
+
       <div class="detail-row">
-        <span>Current returns</span>
+
+        <span>
+          Current returns
+        </span>
+
         <strong class="green">
           ₦312,680
         </strong>
+
       </div>
 
+
       <div class="detail-row">
-        <span>Growth</span>
+
+        <span>
+          Growth
+        </span>
+
         <strong class="green">
           +12.6%
         </strong>
+
       </div>
+
 
       <div class="detail-row">
-        <span>Risk profile</span>
-        <strong>Moderate</strong>
+
+        <span>
+          Risk profile
+        </span>
+
+        <strong>
+          Moderate
+        </strong>
+
       </div>
 
+
       <div class="notice">
+
         Portfolio values shown here are demo figures.
+
       </div>
+
     `
   );
+
 }
 
 
@@ -1136,40 +1484,77 @@ function openAllocation() {
 
   openModal(
     "Asset Allocation",
+
     `
 
       <p>
         Current demonstration allocation:
       </p>
 
+
       <div class="allocation-edit">
 
         <label>
+
           Nigerian equities
-          <input type="range" value="35">
+
+          <input
+            type="range"
+            value="35"
+          >
+
         </label>
 
+
         <label>
+
           Bonds & T-bills
-          <input type="range" value="25">
+
+          <input
+            type="range"
+            value="25"
+          >
+
         </label>
 
+
         <label>
+
           Global ETFs
-          <input type="range" value="20">
+
+          <input
+            type="range"
+            value="20"
+          >
+
         </label>
 
+
         <label>
+
           REITs
-          <input type="range" value="10">
+
+          <input
+            type="range"
+            value="10"
+          >
+
         </label>
 
+
         <label>
+
           Cash
-          <input type="range" value="10">
+
+          <input
+            type="range"
+            value="10"
+          >
+
         </label>
 
       </div>
+
 
       <button
         class="primary-button full-width"
@@ -1177,22 +1562,32 @@ function openAllocation() {
       >
         Save Allocation
       </button>
+
     `
   );
 
 
-  $("#saveAllocation").addEventListener(
-    "click",
-    () => {
+  const button =
+    $("#saveAllocation");
 
-      closeModal();
 
-      toast(
-        "Asset allocation updated for this demo."
-      );
+  if (button) {
 
-    }
-  );
+    button.addEventListener(
+      "click",
+      () => {
+
+        closeModal();
+
+        toast(
+          "Asset allocation updated for this demo."
+        );
+
+      }
+    );
+
+  }
+
 }
 
 
@@ -1204,6 +1599,7 @@ function openReferral() {
 
   openModal(
     "Refer & Earn",
+
     `
 
       <div class="referral-box">
@@ -1212,13 +1608,16 @@ function openReferral() {
           Invite friends to Veltara
         </strong>
 
+
         <p>
           Share your referral code with friends.
         </p>
 
+
         <div class="referral-code">
           VELTARA2026
         </div>
+
 
         <button
           class="primary-button full-width"
@@ -1228,34 +1627,130 @@ function openReferral() {
         </button>
 
       </div>
+
     `
   );
 
 
-  $("#copyReferral").addEventListener(
-    "click",
-    async () => {
+  const button =
+    $("#copyReferral");
 
-      try {
 
-        await navigator.clipboard.writeText(
-          "VELTARA2026"
-        );
+  if (button) {
 
-        toast(
-          "Referral code copied."
-        );
+    button.addEventListener(
+      "click",
+      async () => {
 
-      } catch {
+        try {
 
-        toast(
-          "Referral code: VELTARA2026"
-        );
+          await navigator.clipboard.writeText(
+            "VELTARA2026"
+          );
+
+
+          toast(
+            "Referral code copied."
+          );
+
+        } catch {
+
+          toast(
+            "Referral code: VELTARA2026"
+          );
+
+        }
 
       }
+    );
 
-    }
-  );
+  }
+
+}
+
+
+// ========================================
+// RECENT ACTIVITY
+// ========================================
+
+function renderRecentActivity() {
+
+  const activity =
+    document.querySelector(
+      ".activity-card"
+    );
+
+
+  if (!activity) return;
+
+
+  const wallet =
+    getWallet();
+
+
+  const transactions =
+    wallet.transactions.slice(
+      0,
+      5
+    );
+
+
+  activity.innerHTML =
+    transactions.map(
+      (transaction) => {
+
+        const incoming =
+          transaction.direction === "in";
+
+
+        const sign =
+          incoming
+            ? "+"
+            : "-";
+
+
+        const icon =
+          incoming
+            ? "＋"
+            : "↗";
+
+
+        return `
+
+          <div class="activity-row">
+
+            <div class="activity-icon">
+              ${icon}
+            </div>
+
+
+            <div>
+
+              <strong>
+                ${transaction.type}
+              </strong>
+
+              <small>
+                ${transaction.date} • Wallet
+              </small>
+
+            </div>
+
+
+            <b
+              class="${incoming ? "green" : ""}"
+            >
+              ${sign}
+              ${formatMoney(transaction.amount)}
+            </b>
+
+          </div>
+
+        `;
+
+      }
+    ).join("");
+
 }
 
 
@@ -1266,181 +1761,230 @@ function openReferral() {
 function openActivity() {
 
   const wallet =
-    getWalletData();
+    getWallet();
 
 
   const transactions =
-    wallet.transactions.slice(0, 10);
+    wallet.transactions.slice(
+      0,
+      10
+    );
 
 
   const content =
-    transactions.map((transaction) => {
+    transactions.map(
+      (transaction) => {
 
-      const incoming =
-        transaction.direction === "in";
+        const incoming =
+          transaction.direction === "in";
 
-      return `
 
-        <div class="detail-row">
+        return `
 
-          <span>
-            ${transaction.type}
-          </span>
+          <div class="detail-row">
 
-          <strong
-            class="${incoming ? "green" : ""}"
-          >
-            ${incoming ? "+" : "-"}
-            ${formatMoney(transaction.amount)}
-          </strong>
+            <span>
+              ${transaction.type}
+            </span>
 
-        </div>
+            <strong
+              class="${incoming ? "green" : ""}"
+            >
+              ${incoming ? "+" : "-"}
+              ${formatMoney(transaction.amount)}
+            </strong>
 
-      `;
+          </div>
 
-    }).join("");
+        `;
+
+      }
+    ).join("");
 
 
   openModal(
     "Recent Activity",
     content
   );
+
 }
 
 
 // ========================================
-// QUICK ACTION HANDLERS
+// QUICK ACTIONS
 // ========================================
 
-document
-  .querySelectorAll("[data-action]")
-  .forEach((button) => {
+function setupActions() {
 
-    button.addEventListener("click", () => {
+  $$("[data-action]")
+    .forEach((button) => {
 
-      const action =
-        button.dataset.action;
+      button.addEventListener(
+        "click",
+        () => {
 
-
-      switch (action) {
-
-        case "invest":
-
-          openPage("invest");
-
-          break;
+          const action =
+            button.dataset.action;
 
 
-        case "deposit":
+          switch (action) {
 
-          openDeposit();
+            case "invest":
 
-          break;
+              openPage("invest");
 
-
-        case "withdraw":
-
-          openWithdraw();
-
-          break;
+              break;
 
 
-        case "plans":
+            case "deposit":
 
-          openPlans();
+              openDeposit();
 
-          break;
-
-
-        case "refer":
-
-          openReferral();
-
-          break;
+              break;
 
 
-        case "details":
+            case "withdraw":
 
-          openPortfolioDetails();
+              openWithdraw();
 
-          break;
-
-
-        case "activity":
-
-          openActivity();
-
-          break;
+              break;
 
 
-        case "adjust":
+            case "plans":
 
-          openAllocation();
+              openPlans();
 
-          break;
-
-
-        case "investNow":
-
-          toast(
-            "Demo investment selected. No real money was invested."
-          );
-
-          break;
+              break;
 
 
-        default:
+            case "refer":
 
-          break;
-      }
+              openReferral();
+
+              break;
+
+
+            case "details":
+
+              openPortfolioDetails();
+
+              break;
+
+
+            case "activity":
+
+              openActivity();
+
+              break;
+
+
+            case "adjust":
+
+              openAllocation();
+
+              break;
+
+
+            case "investNow":
+
+              toast(
+                "Demo investment selected. No real money was invested."
+              );
+
+              break;
+
+          }
+
+        }
+      );
 
     });
 
-  });
+}
 
 
 // ========================================
-// BALANCE VISIBILITY
+// BALANCE TOGGLE
 // ========================================
 
-let balanceVisible = true;
+function setupBalanceToggle() {
+
+  const toggle =
+    $("#toggleBalance");
 
 
-$("#toggleBalance").addEventListener(
-  "click",
-  () => {
+  if (!toggle) return;
 
-    balanceVisible =
-      !balanceVisible;
 
-    updateBalanceDisplays();
+  toggle.addEventListener(
+    "click",
+    () => {
 
-  }
-);
+      balanceVisible =
+        !balanceVisible;
+
+
+      updateBalanceDisplay();
+
+    }
+  );
+
+}
 
 
 // ========================================
 // LOGOUT
 // ========================================
 
-$("#logoutButton").addEventListener(
-  "click",
+function setupLogout() {
+
+  const logout =
+    $("#logoutButton");
+
+
+  if (!logout) return;
+
+
+  logout.addEventListener(
+    "click",
+    () => {
+
+      localStorage.removeItem(
+        "veltaraLoggedIn"
+      );
+
+
+      location.reload();
+
+    }
+  );
+
+}
+
+
+// ========================================
+// INITIALIZE EVERYTHING
+// ========================================
+
+document.addEventListener(
+  "DOMContentLoaded",
   () => {
 
-    localStorage.removeItem(
-      "veltaraLoggedIn"
-    );
+    updateAuthScreen();
 
-    location.reload();
+    setupAuthentication();
+
+    setupNavigation();
+
+    setupActions();
+
+    setupBalanceToggle();
+
+    setupLogout();
+
+    updateBalanceDisplay();
+
+    checkLogin();
 
   }
 );
-
-
-// ========================================
-// INITIALIZE
-// ========================================
-
-updateAuthScreen();
-
-updateBalanceDisplays();
