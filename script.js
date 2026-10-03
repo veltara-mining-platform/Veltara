@@ -1,10 +1,30 @@
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => document.querySelectorAll(selector);
 
-const DEFAULT_BALANCE = 3712680;
+
+/* =========================
+   SUPABASE
+========================= */
+
+const SUPABASE_URL =
+  "https://qsayxiuomatoidxgzczk.supabase.co";
+
+const SUPABASE_PUBLISHABLE_KEY =
+  "sb_publishable_S9TgEhZvhm3jT_FAnlYXDw_d6UHveO_";
+
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY
+  );
+
 
 let authMode = "login";
 let balanceVisible = true;
+let currentWallet = {
+  balance: 0,
+  transactions: []
+};
 
 
 /* =========================
@@ -34,92 +54,6 @@ function toast(message) {
   setTimeout(() => {
     box.classList.remove("show");
   }, 3000);
-}
-
-
-/* =========================
-   WALLET
-========================= */
-
-function getWallet() {
-  let wallet = null;
-
-  try {
-    wallet = JSON.parse(
-      localStorage.getItem("veltaraWallet")
-    );
-  } catch (error) {
-    wallet = null;
-  }
-
-  if (!wallet || typeof wallet !== "object") {
-    wallet = {
-      balance: DEFAULT_BALANCE,
-      transactions: [
-        {
-          type: "Monthly Investment",
-          amount: 100000,
-          direction: "in",
-          date: "Today"
-        },
-        {
-          type: "Investment Return",
-          amount: 18750,
-          direction: "in",
-          date: "Yesterday"
-        }
-      ]
-    };
-  }
-
-  wallet.balance = Number(wallet.balance);
-
-  if (!Number.isFinite(wallet.balance)) {
-    wallet.balance = DEFAULT_BALANCE;
-  }
-
-  if (!Array.isArray(wallet.transactions)) {
-    wallet.transactions = [];
-  }
-
-  localStorage.setItem(
-    "veltaraWallet",
-    JSON.stringify(wallet)
-  );
-
-  return wallet;
-}
-
-
-function saveWallet(wallet) {
-  localStorage.setItem(
-    "veltaraWallet",
-    JSON.stringify(wallet)
-  );
-}
-
-
-/* =========================
-   UPDATE BALANCE
-========================= */
-
-function updateBalanceDisplay() {
-  const wallet = getWallet();
-
-  const balance = $("#balanceAmount");
-  const walletBalance =
-    document.querySelector(".wallet-balance");
-
-  if (balance) {
-    balance.textContent = balanceVisible
-      ? formatMoney(wallet.balance)
-      : "••••••••";
-  }
-
-  if (walletBalance) {
-    walletBalance.textContent =
-      formatMoney(wallet.balance);
-  }
 }
 
 
@@ -179,7 +113,7 @@ function setupAuthentication() {
 
   if (!form) return;
 
-  form.addEventListener("submit", (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
     const email =
@@ -198,10 +132,23 @@ function setupAuthentication() {
       return;
     }
 
-    if (authMode === "signup") {
-      createAccount(email, password);
-    } else {
-      login(email, password);
+    const submitButton =
+      form.querySelector("button[type='submit']");
+
+    if (submitButton) {
+      submitButton.disabled = true;
+    }
+
+    try {
+      if (authMode === "signup") {
+        await createAccount(email, password);
+      } else {
+        await login(email, password);
+      }
+    } finally {
+      if (submitButton) {
+        submitButton.disabled = false;
+      }
     }
   });
 }
@@ -211,13 +158,28 @@ function setupAuthentication() {
    CREATE ACCOUNT
 ========================= */
 
-function createAccount(email, password) {
-  const existingUser =
-    localStorage.getItem("veltaraUser");
+async function createAccount(email, password) {
+  const { data, error } =
+    await supabaseClient.auth.signUp({
+      email,
+      password
+    });
 
-  if (existingUser) {
+  if (error) {
+    console.error("Signup error:", error);
+
+    toast(error.message);
+
+    return;
+  }
+
+  /*
+    Supabase may require email confirmation.
+  */
+
+  if (!data.session) {
     toast(
-      "An account already exists. Please sign in."
+      "Account created. Please check your email to confirm your account."
     );
 
     authMode = "login";
@@ -226,24 +188,9 @@ function createAccount(email, password) {
     return;
   }
 
-  const user = {
-    email: email,
-    password: password
-  };
-
-  localStorage.setItem(
-    "veltaraUser",
-    JSON.stringify(user)
-  );
-
-  localStorage.setItem(
-    "veltaraLoggedIn",
-    "true"
-  );
-
-  getWallet();
-
   toast("Account created successfully.");
+
+  await loadWallet();
 
   showApplication();
 }
@@ -253,54 +200,163 @@ function createAccount(email, password) {
    LOGIN
 ========================= */
 
-function login(email, password) {
-  const savedUser =
-    localStorage.getItem("veltaraUser");
+async function login(email, password) {
+  const { data, error } =
+    await supabaseClient.auth.signInWithPassword({
+      email,
+      password
+    });
 
-  if (!savedUser) {
-    toast(
-      "No account exists yet. Please create an account."
-    );
+  if (error) {
+    console.error("Login error:", error);
 
-    authMode = "signup";
-    updateAuthScreen();
-
-    return;
-  }
-
-  let user;
-
-  try {
-    user = JSON.parse(savedUser);
-  } catch (error) {
-    localStorage.removeItem("veltaraUser");
-
-    toast(
-      "Account data was corrupted. Please create a new account."
-    );
-
-    authMode = "signup";
-    updateAuthScreen();
+    toast(error.message);
 
     return;
   }
-
-  if (
-    email !== user.email ||
-    password !== user.password
-  ) {
-    toast("Incorrect email or password.");
-    return;
-  }
-
-  localStorage.setItem(
-    "veltaraLoggedIn",
-    "true"
-  );
 
   toast("Login successful.");
 
+  await loadWallet();
+
   showApplication();
+}
+
+
+/* =========================
+   LOGOUT
+========================= */
+
+async function logout() {
+  const { error } =
+    await supabaseClient.auth.signOut();
+
+  if (error) {
+    console.error("Logout error:", error);
+
+    toast(error.message);
+
+    return;
+  }
+
+  currentWallet = {
+    balance: 0,
+    transactions: []
+  };
+
+  $("#app").classList.add("hidden");
+  $("#authScreen").classList.remove("hidden");
+
+  authMode = "login";
+
+  updateAuthScreen();
+
+  toast("You have been logged out.");
+}
+
+
+/* =========================
+   CHECK AUTH
+========================= */
+
+async function checkLogin() {
+  const {
+    data: { session }
+  } = await supabaseClient.auth.getSession();
+
+  if (session) {
+    await loadWallet();
+    showApplication();
+  }
+}
+
+
+/* =========================
+   WALLET
+========================= */
+
+async function loadWallet() {
+  const {
+    data: { user },
+    error: userError
+  } = await supabaseClient.auth.getUser();
+
+  if (userError || !user) {
+    console.error("User error:", userError);
+    return;
+  }
+
+  const { data: wallet, error: walletError } =
+    await supabaseClient
+      .from("wallets")
+      .select("*")
+      .eq("user_id", user.id)
+      .single();
+
+  if (walletError) {
+    console.error("Wallet error:", walletError);
+
+    toast(
+      "Your wallet could not be loaded."
+    );
+
+    return;
+  }
+
+  const {
+    data: transactions,
+    error: transactionError
+  } = await supabaseClient
+    .from("transactions")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", {
+      ascending: false
+    })
+    .limit(10);
+
+  if (transactionError) {
+    console.error(
+      "Transaction error:",
+      transactionError
+    );
+  }
+
+  currentWallet = {
+    balance: Number(wallet.balance || 0),
+    transactions: transactions || []
+  };
+
+  updateBalanceDisplay();
+  renderActivity();
+}
+
+
+/* =========================
+   UPDATE BALANCE
+========================= */
+
+function updateBalanceDisplay() {
+  const balance =
+    $("#balanceAmount");
+
+  const walletBalance =
+    document.querySelector(".wallet-balance");
+
+  const amount =
+    currentWallet.balance || 0;
+
+  if (balance) {
+    balance.textContent =
+      balanceVisible
+        ? formatMoney(amount)
+        : "••••••••";
+  }
+
+  if (walletBalance) {
+    walletBalance.textContent =
+      formatMoney(amount);
+  }
 }
 
 
@@ -326,20 +382,6 @@ function showApplication() {
 
 
 /* =========================
-   CHECK LOGIN
-========================= */
-
-function checkLogin() {
-  const loggedIn =
-    localStorage.getItem("veltaraLoggedIn");
-
-  if (loggedIn === "true") {
-    showApplication();
-  }
-}
-
-
-/* =========================
    NAVIGATION
 ========================= */
 
@@ -360,7 +402,8 @@ function openPage(pageName) {
     page.classList.add("hidden");
   });
 
-  const page = $(`#${pageName}`);
+  const page =
+    $(`#${pageName}`);
 
   if (page) {
     page.classList.remove("hidden");
@@ -432,7 +475,7 @@ function setupActions() {
 
       if (action === "investNow") {
         toast(
-          "Investment is available in demo mode only."
+          "Investment functionality will be connected next."
         );
       }
     });
@@ -465,13 +508,19 @@ function openDeposit() {
         class="primary-button full-width"
         type="button"
       >
-        Deposit Funds
+        Continue to Payment
       </button>
+
+      <div class="notice">
+        You will be redirected to Paystack to complete your payment.
+      </div>
     `
   );
 
   const button =
     $("#confirmDeposit");
+
+  if (!button) return;
 
   button.addEventListener("click", () => {
     const amount =
@@ -487,40 +536,18 @@ function openDeposit() {
       return;
     }
 
-    const wallet = getWallet();
-
     /*
-      THIS IS THE IMPORTANT PART.
+      Paystack connection will be added
+      in the next step.
+
+      DO NOT increase the balance here.
+
+      The balance should only increase
+      after Paystack confirms payment.
     */
 
-    wallet.balance =
-      Number(wallet.balance) +
-      Number(amount);
-
-    wallet.transactions.unshift({
-      type: "Deposit",
-      amount: Number(amount),
-      direction: "in",
-      date: "Just now"
-    });
-
-    localStorage.setItem(
-      "veltaraWallet",
-      JSON.stringify(wallet)
-    );
-
-    /*
-      Update dashboard immediately.
-    */
-
-    updateBalanceDisplay();
-    renderActivity();
-
-    closeModal();
-
-    alert(
-      "Deposit successful!\n\nNew balance: " +
-      formatMoney(wallet.balance)
+    toast(
+      "Payment system is being connected."
     );
   });
 }
@@ -551,13 +578,19 @@ function openWithdraw() {
         class="primary-button full-width"
         type="button"
       >
-        Withdraw Funds
+        Request Withdrawal
       </button>
+
+      <div class="notice">
+        Withdrawal processing will be connected after the payment system is complete.
+      </div>
     `
   );
 
   const button =
     $("#confirmWithdraw");
+
+  if (!button) return;
 
   button.addEventListener("click", () => {
     const amount =
@@ -573,36 +606,13 @@ function openWithdraw() {
       return;
     }
 
-    const wallet = getWallet();
-
-    wallet.balance =
-      Number(wallet.balance);
-
-    if (amount > wallet.balance) {
+    if (amount > currentWallet.balance) {
       toast("Insufficient balance.");
       return;
     }
 
-    wallet.balance =
-      wallet.balance - amount;
-
-    wallet.transactions.unshift({
-      type: "Withdrawal",
-      amount: amount,
-      direction: "out",
-      date: "Just now"
-    });
-
-    saveWallet(wallet);
-
-    updateBalanceDisplay();
-    renderActivity();
-
-    closeModal();
-
-    alert(
-      "Withdrawal successful!\n\nNew balance: " +
-      formatMoney(wallet.balance)
+    toast(
+      "Withdrawal processing will be connected next."
     );
   });
 }
@@ -677,8 +687,6 @@ function closeModal() {
 ========================= */
 
 function renderActivity() {
-  const wallet = getWallet();
-
   const activityCards =
     document.querySelectorAll(
       ".activity-card"
@@ -686,17 +694,39 @@ function renderActivity() {
 
   if (!activityCards.length) return;
 
-  const card = activityCards[0];
+  const card =
+    activityCards[0];
+
+  if (!currentWallet.transactions.length) {
+    card.innerHTML = `
+      <div class="activity-row">
+        <div>
+          <strong>No transactions yet</strong>
+          <small>Your activity will appear here.</small>
+        </div>
+      </div>
+    `;
+
+    return;
+  }
 
   card.innerHTML =
-    wallet.transactions
+    currentWallet.transactions
       .slice(0, 10)
       .map((transaction) => {
         const incoming =
-          transaction.direction === "in";
+          transaction.type === "deposit" ||
+          transaction.type === "return";
 
         const sign =
           incoming ? "+" : "-";
+
+        const date =
+          transaction.created_at
+            ? new Date(
+                transaction.created_at
+              ).toLocaleString("en-NG")
+            : "Just now";
 
         return `
           <div class="activity-row">
@@ -711,7 +741,7 @@ function renderActivity() {
               </strong>
 
               <small>
-                ${transaction.date}
+                ${date}
               </small>
             </div>
 
@@ -758,19 +788,36 @@ function setupLogout() {
 
   button.addEventListener(
     "click",
-    () => {
-      localStorage.removeItem(
-        "veltaraLoggedIn"
-      );
+    logout
+  );
+}
 
-      $("#app").classList.add("hidden");
-      $("#authScreen").classList.remove("hidden");
 
-      authMode = "login";
+/* =========================
+   AUTH STATE LISTENER
+========================= */
 
-      updateAuthScreen();
+function setupAuthListener() {
+  supabaseClient.auth.onAuthStateChange(
+    async (event, session) => {
 
-      toast("You have been logged out.");
+      if (
+        event === "SIGNED_IN" &&
+        session
+      ) {
+        await loadWallet();
+      }
+
+      if (event === "SIGNED_OUT") {
+        currentWallet = {
+          balance: 0,
+          transactions: []
+        };
+
+        $("#app").classList.add("hidden");
+        $("#authScreen").classList.remove("hidden");
+      }
+
     }
   );
 }
@@ -782,18 +829,18 @@ function setupLogout() {
 
 document.addEventListener(
   "DOMContentLoaded",
-  () => {
-    updateAuthScreen();
+  async () => {
 
-    getWallet();
+    updateAuthScreen();
 
     setupAuthentication();
     setupNavigation();
     setupActions();
     setupBalanceToggle();
     setupLogout();
+    setupAuthListener();
 
-    updateBalanceDisplay();
-    checkLogin();
+    await checkLogin();
+
   }
 );
