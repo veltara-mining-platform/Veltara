@@ -584,7 +584,7 @@ async function openDeposit() {
    WITHDRAW
 ========================= */
 
-function openWithdraw() {
+async function openWithdraw() {
   openModal(
     "Withdraw Funds",
     `
@@ -605,42 +605,74 @@ function openWithdraw() {
         class="primary-button full-width"
         type="button"
       >
-        Request Withdrawal
+        Withdraw Demo Funds
       </button>
 
       <div class="notice">
-        Withdrawal processing will be connected after the payment system is complete.
+        Demo mode: no real money is being transferred.
       </div>
     `
   );
 
-  const button =
-    $("#confirmWithdraw");
+  const button = $("#confirmWithdraw");
 
   if (!button) return;
 
-  button.addEventListener("click", () => {
-    const amount =
-      Number($("#withdrawAmount").value);
+  button.addEventListener("click", async () => {
+    const amount = Number($("#withdrawAmount").value);
 
-    if (!Number.isFinite(amount)) {
+    if (!Number.isFinite(amount) || amount <= 0) {
       toast("Please enter a valid amount.");
       return;
     }
 
     if (amount < 1000) {
-      toast("Minimum withdrawal is ₦1,000.");
+      toast("Minimum demo withdrawal is ₦1,000.");
       return;
     }
 
-    if (amount > currentWallet.balance) {
-      toast("Insufficient balance.");
-      return;
-    }
+    try {
+      button.disabled = true;
+      button.textContent = "Processing...";
 
-    toast(
-      "Withdrawal processing will be connected next."
-    );
+      const {
+        data: { user },
+        error: userError
+      } = await supabaseClient.auth.getUser();
+
+      if (userError || !user) {
+        toast("Please log in again.");
+        return;
+      }
+
+      const { data, error } = await supabaseClient.rpc(
+        "add_demo_withdrawal",
+        {
+          withdrawal_amount: amount
+        }
+      );
+
+      if (error) {
+        console.error("Demo withdrawal error:", error);
+        toast(error.message || "Withdrawal failed.");
+        return;
+      }
+
+      toast(
+        `₦${amount.toLocaleString("en-NG")} withdrawn successfully.`
+      );
+
+      closeModal();
+
+      await loadWallet();
+
+    } catch (error) {
+      console.error("Withdrawal error:", error);
+      toast("Unable to process demo withdrawal.");
+    } finally {
+      button.disabled = false;
+      button.textContent = "Withdraw Demo Funds";
+    }
   });
 }
 
