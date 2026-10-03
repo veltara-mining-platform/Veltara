@@ -508,11 +508,11 @@ async function openDeposit() {
         class="primary-button full-width"
         type="button"
       >
-        Continue to Payment
+        Add Demo Funds
       </button>
 
       <div class="notice">
-        You will be redirected to Paystack to complete your payment.
+        Demo mode: no real money is being deposited.
       </div>
     `
   );
@@ -524,63 +524,57 @@ async function openDeposit() {
   button.addEventListener("click", async () => {
     const amount = Number($("#depositAmount").value);
 
-    if (!Number.isFinite(amount)) {
+    if (!Number.isFinite(amount) || amount <= 0) {
       toast("Please enter a valid amount.");
       return;
     }
 
     if (amount < 1000) {
-      toast("Minimum deposit is ₦1,000.");
+      toast("Minimum demo deposit is ₦1,000.");
       return;
     }
 
     try {
       button.disabled = true;
-      button.textContent = "Connecting to Paystack...";
+      button.textContent = "Adding funds...";
 
       const {
-  data: { user },
-} = await supabaseClient.auth.getUser();
+        data: { user },
+        error: userError
+      } = await supabaseClient.auth.getUser();
 
-      if (!user) {
+      if (userError || !user) {
         toast("Please log in again.");
-        button.disabled = false;
-        button.textContent = "Continue to Payment";
         return;
       }
 
-      const response = await fetch(
-        "/.netlify/functions/initialize-payment",
+      const { data, error } = await supabaseClient.rpc(
+        "add_demo_deposit",
         {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: user.email,
-            amount: amount,
-          }),
+          deposit_amount: amount
         }
       );
 
-      const data = await response.json();
-
-      if (!response.ok || !data.status || !data.data?.authorization_url) {
-        throw new Error(
-          data.message || data.error || "Unable to start payment."
-        );
+      if (error) {
+        console.error("Demo deposit error:", error);
+        toast(error.message || "Deposit failed.");
+        return;
       }
 
-      window.location.href = data.data.authorization_url;
-    } catch (error) {
-      console.error(error);
-
       toast(
-        error.message || "Payment could not be started."
+        `₦${amount.toLocaleString("en-NG")} added successfully.`
       );
 
+      closeModal();
+
+      await loadWallet();
+
+    } catch (error) {
+      console.error("Deposit error:", error);
+      toast("Unable to add demo funds.");
+    } finally {
       button.disabled = false;
-      button.textContent = "Continue to Payment";
+      button.textContent = "Add Demo Funds";
     }
   });
 }
