@@ -539,8 +539,8 @@ async function openDeposit() {
       button.textContent = "Connecting to Paystack...";
 
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
+  data: { user },
+} = await supabaseClient.auth.getUser();
 
       if (!user) {
         toast("Please log in again.");
